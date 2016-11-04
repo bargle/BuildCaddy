@@ -41,8 +41,13 @@
   <ItemGroup>
     <Compile Include="BuildStatus.cs" />
     <Compile Include="Config.cs" />
+    <Compile Include="IBuilder.cs" />
+    <Compile Include="IBuildMonitor.cs" />
+    <Compile Include="ILog.cs" />
+    <Compile Include="IPlugin.cs" />
     <Compile Include="JSONObject.cs" />
     <Compile Include="JSONUtil.cs" />
+    <Compile Include="NetworkService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Step.cs" />
     <Compile Include="Task.cs" />

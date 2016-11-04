@@ -21,6 +21,14 @@ namespace BuildCaddy
         public OnTriggerWithMessageAndLog OnFailure;
         public OnTriggerWithMessage OnSuccess;
 
+		public BuildStatus.Status Status
+		{
+			get
+			{
+				return m_status;
+			}
+		}
+
         public void SetIdle()
         {
             m_status = BuildStatus.Status.Idle;

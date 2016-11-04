@@ -30,6 +30,7 @@ namespace BuildCaddyShared
 
                             string key = string.Empty;
                             string value = string.Empty;
+							string env = string.Empty;
 
                             if (entry.HasField("KEY") && entry["KEY"].type == JSONObject.Type.STRING)
                             {
@@ -43,6 +44,12 @@ namespace BuildCaddyShared
 
                             if (key.Length > 0 && value.Length > 0)
                             {
+								if (entry.HasField("ENV") && entry["ENV"].type == JSONObject.Type.STRING)
+								{
+									env = entry["ENV"].str;
+									Environment.SetEnvironmentVariable( key, value );
+								}
+
                                 result.Add(key, value);
                             }
                         }
