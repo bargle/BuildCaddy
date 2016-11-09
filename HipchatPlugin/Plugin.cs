@@ -41,7 +41,11 @@ public class Plugin : IPlugin, IBuildMonitor
 		DoWork( start );
 	}
 
-	public void OnSuccess( string message )
+    public void OnStep( string message )
+    {
+    }
+
+    public void OnSuccess( string message )
 	{
 		ProcessStartInfo start = CreateProcessStartInfo();
 		start.Arguments = "-d \"&message=" + message + "&color=green\" " + m_builder.GetConfigString( "hipchaturl" );

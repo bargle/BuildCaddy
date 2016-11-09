@@ -18,6 +18,7 @@ namespace BuildCaddy
 
         public OnTrigger OnIdle;
         public OnTriggerWithMessage OnRunning;
+        public OnTriggerWithMessage OnStep;
         public OnTriggerWithMessageAndLog OnFailure;
         public OnTriggerWithMessage OnSuccess;
 
@@ -44,6 +45,14 @@ namespace BuildCaddy
             if ( OnRunning != null )
             { 
                 OnRunning( message );
+            }
+        }
+
+        public void SetStep(string message)
+        {
+            if ( OnStep != null )
+            {
+                OnStep( message );
             }
         }
 

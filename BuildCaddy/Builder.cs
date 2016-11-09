@@ -11,10 +11,12 @@ namespace BuildCaddy
 {
 	class Builder : IBuilder
 	{
-		string s_Invalid = "INVALID";
+        static int s_DefaultDelay = 60000;
+		static string s_Invalid = "INVALID";
 		Dictionary<string,string> s_Config = new Dictionary<string,string>();
 		BuildCaddyShared.Task s_Task = new BuildCaddyShared.Task();
 		BuildStatusMonitor m_buildStatusMonitor = new BuildStatusMonitor();
+        string m_taskName = string.Empty;
 
 		ILog m_log;
 
@@ -37,16 +39,26 @@ namespace BuildCaddy
 			m_buildStatusMonitor.OnFailure += monitor.OnFailure;
 			m_buildStatusMonitor.OnSuccess += monitor.OnSuccess;
 			m_buildStatusMonitor.OnRunning += monitor.OnRunning;
-		}
+            m_buildStatusMonitor.OnStep += monitor.OnStep;
+        }
 
 		public ILog GetLog()
 		{
 			return m_log;
 		}
 
-		#endregion
+        public string GetConfigFilePath( string filename )
+        {
+            return Path.Combine( "Config", filename );
+        }
 
-		public void Initialize( string[] args )
+        public string GetName()
+        {
+            return GetConfigString( "taskname" );
+        }
+        #endregion
+
+        public void Initialize( string[] args )
 		{
 			m_log = new Log();
 
@@ -86,6 +98,12 @@ namespace BuildCaddy
 			{ 
 				s_Task.ResolveVariables( s_Config );
 
+                m_taskName = GetConfigSetting( "taskname" );
+                if ( m_taskName.Length == 0 )
+                {
+                    m_taskName = Path.GetFileNameWithoutExtension( taskFilename );
+                }
+
 				bool forceBuildOnLaunch = GetConfigSetting( "force_build_on_launch" ).ToLower().CompareTo( "true" ) == 0;
 			
 				RunBuilder( taskFilename, forceBuildOnLaunch );
@@ -99,7 +117,7 @@ namespace BuildCaddy
 				return string.Empty;
 			}
 
-			return s_Config[key];
+			return s_Config[ key ];
 		}
 
 		string GetAndUpdateRevisionNumber( string url )
@@ -160,15 +178,18 @@ namespace BuildCaddy
 				//resolve variables against current context (rev number etc...)
 				step.ResolveVariables( dict );
 
-				//Grab the current step title
-				currentStepTitle = step.m_Title;
+                //Grab the current step title
+                currentStepTitle = step.m_Title;
 
 				//Run the step...
 				if ( step.m_Command.Length > 0 )
 				{ 
 					m_log.WriteLine( "Starting step: " + step.m_Title );
 
-					ProcessStartInfo start = new ProcessStartInfo();
+                    //Inform the build monitor that we are starting this step
+                    m_buildStatusMonitor.SetStep( step.m_Title );
+
+                    ProcessStartInfo start = new ProcessStartInfo();
 					start.FileName = step.m_Command;
 					start.Arguments = step.m_Args;
 
@@ -190,7 +211,7 @@ namespace BuildCaddy
 
 									//TODO: add full build information
 									m_lastError =  "TASK: " + taskName + "\nERROR on build step: " + step.m_Title + " Revision: " + rev;
-									return false;
+                                    return false;
 								}
 
 								using ( StreamReader reader = process.StandardOutput )
@@ -207,7 +228,7 @@ namespace BuildCaddy
 						{ 
 							m_lastError =   "Exception on: " + start.FileName + " " + start.Arguments + "\n" + e.ToString() ;
 							m_log.WriteLine( m_lastError );
-							return false;
+                            return false;
 						}
 					}
 					else
@@ -225,7 +246,7 @@ namespace BuildCaddy
 
 									//TODO: add full build information
 									m_lastError =   "TASK: " + taskName + "\nERROR on build step: " + step.m_Title + " Revision: " + rev;
-									return false;
+                                    return false;
 								}
 							}
 						}
@@ -233,12 +254,12 @@ namespace BuildCaddy
 						{ 
 							m_lastError =   "Exception on: " + start.FileName + " " + start.Arguments + "\n" + e.ToString() ;
 							m_log.WriteLine( m_lastError );
-							return false;
+                            return false;
 						}
 					}
-				}   
-			}
-			return true;
+				}
+            }
+            return true;
 		}
 
 		void RunBuilder( string taskName, bool forceBuild = false )
@@ -248,16 +269,16 @@ namespace BuildCaddy
 			string rev = GetAndUpdateRevisionNumber( GetConfigSetting( "repo" ) );
 			m_log.WriteLine( "Initial Revision Number is: " + rev );
 
-			int delay = Util.ParseIntFromString( GetConfigSetting( "delay" ), 60000 );
+			int delay = Util.ParseIntFromString( GetConfigSetting( "delay" ), s_DefaultDelay );
 
 			while (true)
 			{
-				Thread.Sleep( delay );
 				m_log.WriteLine( "Checking Source Control..." );
 				string rev_current = GetAndUpdateRevisionNumber( GetConfigSetting( "repo" ) );
 
 				if ( rev_current.CompareTo( s_Invalid ) == 0 )
 				{ 
+                    Thread.Sleep( delay );
 					continue;
 				}
 
@@ -287,6 +308,8 @@ namespace BuildCaddy
 					m_log.WriteLine("  No Updates... (rev: " + rev_current + ")");
 					m_buildStatusMonitor.SetIdle();
 				}
+
+                Thread.Sleep( delay );
 			}
 
 			//m_buildStatusMonitor.SetIdle();

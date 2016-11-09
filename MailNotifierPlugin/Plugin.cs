@@ -46,7 +46,12 @@ public class Plugin : IPlugin, IBuildMonitor
 
 	}
 
-	public void OnSuccess( string message )
+    public void OnStep( string message )
+    {
+
+    }
+
+    public void OnSuccess( string message )
 	{
 
 	}

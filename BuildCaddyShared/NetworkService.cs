@@ -2,11 +2,11 @@
 using System.Net.Sockets;
 using System.Net;
 using System.Text;
+using BuildCaddyShared;
 
-public delegate void OnReceiveData(ref JSONObject obj, IPEndPoint endPoint);
+public delegate void OnReceiveData( IMessage msg, IPEndPoint endPoint );
 public class NetworkService
 {
-	public static int protocolVersion = 1;
 	UdpClient m_Peer;
 	OnReceiveData m_onReceiveData;
 
@@ -18,7 +18,7 @@ public class NetworkService
 
 		try
 		{
-			IPEndPoint localpt = new IPEndPoint(IPAddress.Any, port);
+			IPEndPoint localpt = new IPEndPoint( IPAddress.Any, port );
 			m_Peer.Client.Bind( localpt );
 		}
 		catch( System.Exception )
@@ -33,7 +33,7 @@ public class NetworkService
 
 	public void Initialize( int port, OnReceiveData recvFn )
 	{
-		if (CreateSocket(port))
+		if ( CreateSocket( port ) )
 		{
 			m_onReceiveData += recvFn;
 		}
@@ -45,7 +45,7 @@ public class NetworkService
 
 	protected virtual string Decode( byte[] bytes )
 	{
-		return ASCIIEncoding.ASCII.GetString(bytes);
+		return ASCIIEncoding.ASCII.GetString( bytes );
 	}
 
 	protected virtual byte[] Encode( string msg )
@@ -55,8 +55,6 @@ public class NetworkService
 
 	void recv( IAsyncResult res )
 	{
-		//Console.WriteLine("recv");
-
 		IPEndPoint remote = new IPEndPoint( IPAddress.Any, 0 );
 		byte[] bytes = m_Peer.EndReceive( res, ref remote );
 		string returnData = Decode( bytes );
@@ -64,25 +62,11 @@ public class NetworkService
 		if ( m_onReceiveData != null )
 		{
 			JSONObject obj = new JSONObject( returnData );
-			if ( obj.HasField( "version" ) )
-			{
-				string versionString = JSONUtil.GetString( obj, "version" );
-				int version = BuildCaddyShared.Util.ParseIntFromString( versionString, -1 );
-
-				if ( version == protocolVersion )
-				{
-					m_onReceiveData( ref obj, remote );
-				}
-				else 
-				{
-					//ignore this old version...
-				}
-			} // else ignore this packet...  
+			m_onReceiveData( new Message( obj ), remote );
 		}
 
-		// get next packet
+		// Wait for the next packet
 		m_Peer.BeginReceive( recv, null );
-
 	}
 
 	public bool Send( string str, IPEndPoint endPoint )
@@ -93,11 +77,10 @@ public class NetworkService
 			m_Peer.Send( bytes, bytes.Length, endPoint );
 			return true;
 		}
-		catch (System.Exception)
+		catch ( System.Exception )
 		{
 		}
 
 		return false;
 	}
-
 }

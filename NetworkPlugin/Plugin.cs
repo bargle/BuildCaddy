@@ -4,12 +4,13 @@ using System.Net;
 using System.Threading;
 using BuildCaddyShared;
 
-public class Plugin : IPlugin
+public class Plugin : IPlugin, IBuildMonitor
 {
 	private IBuilder m_builder;
 	private NetworkService m_networkService;
+    private Dictionary<string, string> m_Config = new Dictionary< string, string >();
 
-	Thread m_thread;
+    Thread m_thread;
 	bool m_bDone = false;
 	IPEndPoint m_server = null;
 
@@ -18,8 +19,15 @@ public class Plugin : IPlugin
 	{
 		m_builder = builder;
 
-		//TODO:
-		// m_builder.GetConfig( "networkplugin.cfg" ) <- or similar
+        string cfg_filename = m_builder.GetConfigFilePath( "network.cfg" );
+        if ( !Config.ReadJSONConfig( cfg_filename, ref m_Config ) )
+        {
+            m_builder.GetLog().WriteLine( "Error loading network.cfg! Networkplugin disabled..." );
+            return;
+        }
+
+        m_builder.AddBuildMonitor(this);
+
 		m_networkService = new NetworkService();
 		m_networkService.Initialize( 0, OnReceiveData );
 
@@ -35,9 +43,48 @@ public class Plugin : IPlugin
 	}
 
 	public string GetName(){ return "NetworkPlugin"; }
+    #endregion
+
+#region IBuildMonitor Interface
+    public void OnRunning( string message )
+    {
+        Message newMsg = new Message();
+        newMsg.Add( "OP", "STATUS" );
+        newMsg.Add( "message", message );
+        m_networkService.Send( newMsg.GetSendable(), m_server );
+    }
+
+    public void OnStep( string message )
+    {
+        if ( m_server == null )
+        {
+            return;
+        }
+
+        Message newMsg = new Message();
+        newMsg.Add( "OP", "STEP" );
+        newMsg.Add( "message", message );
+        m_networkService.Send( newMsg.GetSendable(), m_server );
+    }
+
+    public void OnSuccess( string message )
+    {
+        Message newMsg = new Message();
+        newMsg.Add( "OP", "STATUS" );
+        newMsg.Add( "message", message );
+        m_networkService.Send( newMsg.GetSendable(), m_server );
+    }
+
+    public void OnFailure( string message, string logFilename )
+    {
+        Message newMsg = new Message();
+        newMsg.Add( "OP", "STATUS" );
+        newMsg.Add( "message", message );
+        m_networkService.Send( newMsg.GetSendable(), m_server );
+    }
 #endregion
 
-	void DoWork()
+    void DoWork()
 	{
 		while ( true )
 		{
@@ -48,13 +95,18 @@ public class Plugin : IPlugin
 
 			if ( m_server == null )
 			{
-				JSONObject json = new JSONObject();
-				json.AddField( "OP", "HLO" );
-				json.AddField( "version", "1" );
+                Message newMsg = new Message();
+                newMsg.Add( "OP", "HLO" );
+                newMsg.Add( "name", m_builder.GetName() );
 
 				try
 				{
-					m_networkService.Send( json.Print(), new IPEndPoint( IPAddress.Broadcast, 20000 ) ); //FIXME: This port needs to be config-driven
+                    int port = 0;
+                    string _port = GetConfigSetting( "port" );
+                    if ( int.TryParse( _port, out port ) )
+                    {
+                        m_networkService.Send( newMsg.GetSendable(), new IPEndPoint( IPAddress.Broadcast, port ) );
+                    }
 				}
 				catch ( System.Exception ) 
 				{
@@ -65,10 +117,27 @@ public class Plugin : IPlugin
 		}
 	}
 
-	void OnReceiveData( ref JSONObject obj, IPEndPoint endPoint )
+	void OnReceiveData( IMessage msg, IPEndPoint endPoint )
 	{
-		//...
-		Console.WriteLine( GetName() + "received a message from: " +endPoint.ToString() );
-		Console.WriteLine( " MSG: " + obj.Print() );
+        string op = msg.GetOperation();
+        if ( op.CompareTo( "PNG" ) == 0 )
+        {
+            m_server = endPoint;
+            Console.WriteLine( "Server found. " + endPoint.ToString() );
+        }
+
+        //...
+        Console.WriteLine( GetName() + "received a message from: " +endPoint.ToString() );
+		Console.WriteLine( " MSG: " + msg.GetMessage() );
 	}
+
+    string GetConfigSetting( string key )
+    {
+        if ( !m_Config.ContainsKey( key ) )
+        {
+            return string.Empty;
+        }
+
+        return m_Config[ key ];
+    }
 }
