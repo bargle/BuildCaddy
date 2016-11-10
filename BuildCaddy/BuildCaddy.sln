@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildCaddy", "BuildCaddy.csproj", "{25CB8175-256C-4D0F-969B-6169006177E6}"
 	ProjectSection(ProjectDependencies) = postProject
 		{DC4C0A84-751C-4D12-9FC8-5D0D600A32BA} = {DC4C0A84-751C-4D12-9FC8-5D0D600A32BA}
@@ -24,6 +26,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HipchatPlugin", "..\Hipchat
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailNotifierPlugin", "..\MailNotifierPlugin\MailNotifierPlugin.csproj", "{BCD60313-1196-4F96-9D95-F55FC93EF086}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DC4C0A84-751C-4D12-9FC8-5D0D600A32BA} = {DC4C0A84-751C-4D12-9FC8-5D0D600A32BA}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SVNPlugin", "..\SVNPlugin\SVNPlugin.csproj", "{BF83938A-7879-4B42-9EC8-C3BD9CB80383}"
 	ProjectSection(ProjectDependencies) = postProject
 		{DC4C0A84-751C-4D12-9FC8-5D0D600A32BA} = {DC4C0A84-751C-4D12-9FC8-5D0D600A32BA}
 	EndProjectSection
@@ -58,6 +65,10 @@ Global
 		{BCD60313-1196-4F96-9D95-F55FC93EF086}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BCD60313-1196-4F96-9D95-F55FC93EF086}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BCD60313-1196-4F96-9D95-F55FC93EF086}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF83938A-7879-4B42-9EC8-C3BD9CB80383}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF83938A-7879-4B42-9EC8-C3BD9CB80383}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF83938A-7879-4B42-9EC8-C3BD9CB80383}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF83938A-7879-4B42-9EC8-C3BD9CB80383}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

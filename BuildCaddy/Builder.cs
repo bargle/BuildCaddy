@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Reflection;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 
 using BuildCaddyShared;
@@ -11,12 +12,26 @@ namespace BuildCaddy
 {
 	class Builder : IBuilder
 	{
-        static int s_DefaultDelay = 60000;
-		static string s_Invalid = "INVALID";
+        struct Command
+        {
+            public Command( string command, string[] args )
+            {
+                m_command = command;
+                m_args = args;
+            }
+
+            public string m_command;
+            public string[] m_args;
+        }
+
+        ConcurrentQueue< Command > m_commands = new ConcurrentQueue<Command>();
+        AutoResetEvent m_commandEvent = new AutoResetEvent(false);
+
 		Dictionary<string,string> s_Config = new Dictionary<string,string>();
 		BuildCaddyShared.Task s_Task = new BuildCaddyShared.Task();
 		BuildStatusMonitor m_buildStatusMonitor = new BuildStatusMonitor();
         string m_taskName = string.Empty;
+        string m_taskFilename = string.Empty;
 
 		ILog m_log;
 
@@ -28,6 +43,7 @@ namespace BuildCaddy
 		string currentStepTitle = string.Empty;
 
 		#region IBuilder Interface
+        //TODO: make this threadsafe
 		
 		public string GetConfigString( string key )
 		{
@@ -56,6 +72,12 @@ namespace BuildCaddy
         {
             return GetConfigString( "taskname" );
         }
+
+        public void QueueCommand( string command, string[] args )
+        {
+            m_commands.Enqueue( new Command( command, args ) );
+            m_commandEvent.Set();
+        }
         #endregion
 
         public void Initialize( string[] args )
@@ -64,12 +86,6 @@ namespace BuildCaddy
 
 			//Read Builder Config
 			Config.ReadJSONConfig( "builder.config", ref s_Config );
-		}
-
-		public void Run( string[] args )
-		{
-			//Set initial task
-			string taskFilename = string.Empty;
 
 			//Usage: BuildCaddy.exe <MyTask.task>
 			if ( args.Length > 0 )
@@ -77,7 +93,7 @@ namespace BuildCaddy
 				//make sure this is a task...
 				if ( Path.GetExtension( args[0].ToLower() ).CompareTo( ".task" ) == 0 )
 				{
-					taskFilename = args[0];
+					m_taskFilename = args[0];
 				}
 			}
 			else
@@ -87,26 +103,79 @@ namespace BuildCaddy
 			}
 
 			//Read task meta config
-			string taskMeta = taskFilename.Replace( ".task", ".meta" );
+			string taskMeta = m_taskFilename.Replace( ".task", ".meta" );
 			Config.ReadJSONConfig( taskMeta, ref s_Config );
 			
 			//Resolve all current outstanding variables ( config -> meta )
 			Config.ResolveVariables( s_Config, s_Config );
+		}
 
+        void RunQueue()
+        {
+            bool done = false;
+            while( !done )
+            {
+                while ( m_commands.Count > 0 )
+                {
+                    Command command;
+                    if ( m_commands.TryDequeue( out command ) )
+                    {
+                        //handle the command
+                        switch( command.m_command )
+                        {
+                            case "build":
+                                {
+                                    //first arg is rev number
+                                    if ( command.m_args.Length > 0 )
+                                    {
+                                        int rev = 0;
+                                        if ( int.TryParse( command.m_args[0], out rev ) ) //let's make sure this is actually a number...
+                                        {
+					                        m_buildStatusMonitor.SetRunning( "Starting " + m_taskName.Replace( ".task", "" ) + " build rev " + rev.ToString() + "..." );
+
+					                        m_log.WriteLine( "Building Revision " + rev + "..." );
+					                        if ( KickoffBuild( m_taskName, rev.ToString() ) )
+					                        {
+						                        m_buildStatusMonitor.SetSuccess( "Finished " + m_taskName.Replace(".task", "") + " build rev " + rev.ToString() + "..." );
+                                                m_log.WriteLine( "Finished Revision " + rev + "..." );
+					                        }
+					                        else
+					                        {
+                                                m_buildStatusMonitor.SetFailure(m_lastError, m_lastLog);
+                                                m_log.WriteLine( "Failed! Revision " + rev + "..." );
+					                        }
+                                        }
+                                    }
+                                } break;
+                            default:
+                                {
+                                    GetLog().WriteLine( "Unrecognized command: " + command.m_command );
+                                }
+                                break;
+                        }
+                    }
+                }
+                //WAIT FOR SIGNAL
+                m_commandEvent.WaitOne();
+
+                GetLog().WriteLine( "RunQueue awoken..." );
+            }
+        }
+
+		public void Run( )
+		{
 			//Read task config
-			if ( s_Task.Initialize( taskFilename ) )
+			if ( s_Task.Initialize( m_taskFilename ) )
 			{ 
 				s_Task.ResolveVariables( s_Config );
 
                 m_taskName = GetConfigSetting( "taskname" );
                 if ( m_taskName.Length == 0 )
                 {
-                    m_taskName = Path.GetFileNameWithoutExtension( taskFilename );
+                    m_taskName = Path.GetFileNameWithoutExtension( m_taskFilename );
                 }
 
-				bool forceBuildOnLaunch = GetConfigSetting( "force_build_on_launch" ).ToLower().CompareTo( "true" ) == 0;
-			
-				RunBuilder( taskFilename, forceBuildOnLaunch );
+                RunQueue();
 			}
 		}
 
@@ -119,41 +188,7 @@ namespace BuildCaddy
 
 			return s_Config[ key ];
 		}
-
-		string GetAndUpdateRevisionNumber( string url )
-		{
-			ProcessStartInfo start = new ProcessStartInfo();
-			start.FileName = GetConfigSetting( "SVN_BINARY" );
-			start.Arguments = "info " + url;
-			start.UseShellExecute = false;
-			start.RedirectStandardOutput = true;
-
-			using ( Process process = Process.Start( start ) )
-			{
-				using ( StreamReader reader = process.StandardOutput )
-				{
-					string result = reader.ReadToEnd();
-					string[] tokens = result.Split( new char[]{ '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries );
-					foreach( string token in tokens )
-					{
-						if ( token.Contains( "Last Changed Rev" ) )
-						{
-							string[] revisionTokens = token.Split( new char[]{ ':' }, StringSplitOptions.RemoveEmptyEntries );
-							if ( revisionTokens.Length > 1 )
-							{ 
-								return revisionTokens[1].Replace( " ", "" );
-							}
-						}
-					}
-				}
-			}
-
-			//FIXME: Use a common static string, or similar...
-			return s_Invalid;
-		}
-
-
-		//TODO: this process needs to be done in a thread...
+ 
 		bool KickoffBuild( string taskName, string rev )
 		{
 			//Set Env vars: these will now be process-wide.
@@ -262,57 +297,5 @@ namespace BuildCaddy
             return true;
 		}
 
-		void RunBuilder( string taskName, bool forceBuild = false )
-		{
-			m_log.WriteLine( "Running " + taskName.Replace( ".task", "" ) + " builder..." );
-
-			string rev = GetAndUpdateRevisionNumber( GetConfigSetting( "repo" ) );
-			m_log.WriteLine( "Initial Revision Number is: " + rev );
-
-			int delay = Util.ParseIntFromString( GetConfigSetting( "delay" ), s_DefaultDelay );
-
-			while (true)
-			{
-				m_log.WriteLine( "Checking Source Control..." );
-				string rev_current = GetAndUpdateRevisionNumber( GetConfigSetting( "repo" ) );
-
-				if ( rev_current.CompareTo( s_Invalid ) == 0 )
-				{ 
-                    Thread.Sleep( delay );
-					continue;
-				}
-
-				bool shouldBuild = ( rev.CompareTo(rev_current) != 0 ) || forceBuild;
-				forceBuild = false;
-
-				if ( shouldBuild )
-				{
-					m_buildStatusMonitor.SetRunning( "Starting " + taskName.Replace( ".task", "" ) + " build rev " + rev_current + "..." );
-
-					m_log.WriteLine( "  Update Detected: " + rev + " != " + rev_current );
-
-					rev = rev_current;
-					m_log.WriteLine( "  Building Revision " + rev + "..." );
-					if ( KickoffBuild( taskName, rev ) )
-					{
-						m_buildStatusMonitor.SetSuccess( "Finished " + taskName.Replace(".task", "") + " build rev " + rev_current + "..." );
-					}
-					else
-					{ 
-						m_buildStatusMonitor.SetFailure( m_lastError, m_lastLog );
-					}
-					m_log.WriteLine( "  Done..." );
-				}
-				else
-				{ 
-					m_log.WriteLine("  No Updates... (rev: " + rev_current + ")");
-					m_buildStatusMonitor.SetIdle();
-				}
-
-                Thread.Sleep( delay );
-			}
-
-			//m_buildStatusMonitor.SetIdle();
-		}
 	}
 }

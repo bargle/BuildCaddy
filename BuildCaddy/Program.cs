@@ -36,7 +36,7 @@ namespace BuildCaddy
 
 			LoadPlugins( builder );
 
-			builder.Run( args );
+			builder.Run( );
 		}
 	}
 }

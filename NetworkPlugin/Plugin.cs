@@ -26,6 +26,13 @@ public class Plugin : IPlugin, IBuildMonitor
             return;
         }
 
+        string enabled = GetConfigSetting( "enabled" );
+        if ( enabled.ToLower().CompareTo("true") != 0 )
+        {
+            m_builder.GetLog().WriteLine( "Networkplugin disabled in config..." );
+            return;
+        }
+
         m_builder.AddBuildMonitor(this);
 
 		m_networkService = new NetworkService();
@@ -93,7 +100,7 @@ public class Plugin : IPlugin, IBuildMonitor
 				break;
 			}
 
-			if ( m_server == null )
+			//if ( m_server == null )
 			{
                 Message newMsg = new Message();
                 newMsg.Add( "OP", "HLO" );
@@ -113,22 +120,46 @@ public class Plugin : IPlugin, IBuildMonitor
 				}
 			}
 
-			Thread.Sleep( 1000 ); //1 second delay.. For now...
+			Thread.Sleep( 10000 ); //1 second delay.. For now...
 		}
 	}
 
 	void OnReceiveData( IMessage msg, IPEndPoint endPoint )
 	{
         string op = msg.GetOperation();
+
+        if ( op.CompareTo( "SRV" ) == 0 )
+        {
+            if ( m_server == null || !m_server.Equals( endPoint ) )
+            {
+                m_server = endPoint;
+                Console.WriteLine( "Server joined. " + endPoint.ToString() );
+            }
+        }
+
         if ( op.CompareTo( "PNG" ) == 0 )
         {
-            m_server = endPoint;
-            Console.WriteLine( "Server found. " + endPoint.ToString() );
+            if ( m_server.Equals( endPoint ) )
+            {
+                Message newMsg = new Message();
+                newMsg.Add( "OP", "PONG" );
+                newMsg.Add( "name", m_builder.GetName() );
+                m_networkService.Send( newMsg.GetSendable(), endPoint );
+            }
+        }
+
+        if ( op.CompareTo("BLD") == 0 )
+        {
+            if ( m_server.Equals( endPoint ) )
+            {
+                string rev = msg.GetValue("rev");
+                m_builder.QueueCommand( "build", new string[] { rev } );
+            }
         }
 
         //...
-        Console.WriteLine( GetName() + "received a message from: " +endPoint.ToString() );
-		Console.WriteLine( " MSG: " + msg.GetMessage() );
+        //Console.WriteLine( GetName() + "received a message from: " +endPoint.ToString() );
+		//Console.WriteLine( " MSG: " + msg.GetMessage() );
 	}
 
     string GetConfigSetting( string key )

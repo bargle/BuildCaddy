@@ -55,18 +55,25 @@ public class NetworkService
 
 	void recv( IAsyncResult res )
 	{
-		IPEndPoint remote = new IPEndPoint( IPAddress.Any, 0 );
-		byte[] bytes = m_Peer.EndReceive( res, ref remote );
-		string returnData = Decode( bytes );
-
-		if ( m_onReceiveData != null )
+		try
 		{
-			JSONObject obj = new JSONObject( returnData );
-			m_onReceiveData( new Message( obj ), remote );
-		}
+		    IPEndPoint remote = new IPEndPoint( IPAddress.Any, 0 );
+		    byte[] bytes = m_Peer.EndReceive( res, ref remote );
+		    string returnData = Decode( bytes );
 
-		// Wait for the next packet
-		m_Peer.BeginReceive( recv, null );
+		    if ( m_onReceiveData != null )
+		    {
+			    JSONObject obj = new JSONObject( returnData );
+			    m_onReceiveData( new Message( obj ), remote );
+		    }
+
+		    // Wait for the next packet
+		    m_Peer.BeginReceive( recv, null );
+        }
+        catch( System.Exception )
+        {
+            //Console.WriteLine( e.ToString() );
+        }
 	}
 
 	public bool Send( string str, IPEndPoint endPoint )
@@ -77,9 +84,10 @@ public class NetworkService
 			m_Peer.Send( bytes, bytes.Length, endPoint );
 			return true;
 		}
-		catch ( System.Exception )
-		{
-		}
+        catch( System.Exception )
+        {
+            //Console.WriteLine( e.ToString() );
+        }
 
 		return false;
 	}

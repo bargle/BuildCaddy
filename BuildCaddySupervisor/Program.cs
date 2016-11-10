@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 using System.Net;
 
 using BuildCaddyShared;
@@ -11,13 +11,30 @@ namespace BuildCaddySupervisor
 {
 	class MyApp
 	{
+
+        const int INVALID_INDEX = -1;
+        struct RemoteBuilder
+        {
+            public RemoteBuilder( string name, IPEndPoint endPoint )
+            {
+                m_name = name;
+                m_endPoint = endPoint;
+            }
+
+            public string m_name;
+            public IPEndPoint m_endPoint;
+        }
+
 		NetworkService m_networkService;
 
-		List< IPEndPoint > m_endPoints;
+		//List< IPEndPoint > m_endPoints;
+        List< RemoteBuilder > m_remoteBuilders;
+
+        bool m_verbose = false;
 
 		public MyApp()
 		{
-			m_endPoints = new List< IPEndPoint >();
+            m_remoteBuilders = new List<RemoteBuilder>();
 		}
 
 		public void Initialize()
@@ -43,23 +60,69 @@ namespace BuildCaddySupervisor
 					Console.ForegroundColor = ConsoleColor.Red;
 				}
 
-				if ( msg.CompareTo( "reset" ) == 0 )
+				if ( msg.CompareTo( "resetcolor" ) == 0 )
 				{
 					Console.ResetColor();
 				}
 
+				if ( msg.CompareTo( "verbose" ) == 0 )
+				{
+					m_verbose = true;
+				}
+
+				if ( msg.CompareTo( "quiet" ) == 0 )
+				{
+					m_verbose = false;
+				}
+
 				if ( msg.CompareTo( "list" ) == 0 )
 				{
-					Console.WriteLine( "IPs: " + m_endPoints.Count );
-					for ( int i = 0; i < m_endPoints.Count; i++ )
+					Console.WriteLine( "IPs: " + m_remoteBuilders.Count );
+					for ( int i = 0; i < m_remoteBuilders.Count; i++ )
 					{
-						Console.WriteLine( " [" + i + "] " + m_endPoints[i].ToString() );
+						Console.WriteLine( " [" + i + "] " + m_remoteBuilders[i].m_name + " - " + m_remoteBuilders[i].m_endPoint.ToString() );
 					}
 				}
 
+				if ( msg.CompareTo( "clearlist" ) == 0 )
+				{
+                    m_remoteBuilders.Clear();
+				}
+
+				if ( msg.StartsWith( "build" ) )
+				{
+                    string[] tokens = msg.Split( new char[]{ ' ' }, StringSplitOptions.RemoveEmptyEntries );
+                    if ( tokens.Length < 3 )
+					{
+                        Console.WriteLine( "Usage: build <index> <rev number>" );
+						return true;
+                    }
+
+                    int idx = 0;
+					if ( int.TryParse(tokens[1], out idx ) )
+					{
+                        Message newMsg = new Message();
+                        newMsg.Add( "OP", "BLD" );
+                        newMsg.Add( "rev", tokens[2] );
+						try
+						{
+							Console.WriteLine( "Sending BUILD command to: " + m_remoteBuilders[idx].m_endPoint.ToString() );
+							m_networkService.Send( newMsg.GetSendable(), m_remoteBuilders[idx].m_endPoint );
+						}
+						catch ( System.Exception e ) 
+						{
+							Console.WriteLine( "Exception: " + e.ToString() );
+						}
+                    }
+                    else
+                    {
+                        Console.WriteLine( "Couldn't parse:  " + tokens[1] );
+                    }
+                }
+
 				if ( msg.StartsWith( "ping" ) )
 				{
-					if ( m_endPoints.Count == 0  )
+					if ( m_remoteBuilders.Count == 0  )
 					{
 						Console.WriteLine( "No IPs in list..." );
 						return true;
@@ -68,14 +131,23 @@ namespace BuildCaddySupervisor
 					string[] tokens = msg.Split( new char[]{ ' ' }, StringSplitOptions.RemoveEmptyEntries );
 					if ( tokens.Length < 2 )
 					{
-						Console.WriteLine( "Usage: ping [index]" );
+						
+                        //ping them all
+                        Message newMsg = new Message();
+                        newMsg.Add( "OP", "PNG" );
+
+                        for( int i = 0; i < m_remoteBuilders.Count; i++ )
+                        {
+                            m_networkService.Send( newMsg.GetSendable(), m_remoteBuilders[ i ].m_endPoint );
+                        }
+
 						return true;
 					}
 
 					int idx = 0;
 					if ( int.TryParse(tokens[1], out idx ) )
 					{
-						if ( ( idx < 0 ) || ( idx > m_endPoints.Count - 1 ) )
+						if ( ( idx < 0 ) || ( idx > m_remoteBuilders.Count - 1 ) )
 						{
 							Console.WriteLine( "Index out of range..." );
 							return true;
@@ -86,8 +158,8 @@ namespace BuildCaddySupervisor
 
 						try
 						{
-							Console.WriteLine( "Sending PING to: " + m_endPoints[idx].ToString() );
-							m_networkService.Send( newMsg.GetSendable(), m_endPoints[idx] );
+							Console.WriteLine( "Sending PING to: " + m_remoteBuilders[idx].m_endPoint.ToString() );
+							m_networkService.Send( newMsg.GetSendable(), m_remoteBuilders[idx].m_endPoint );
 						}
 						catch ( System.Exception e ) 
 						{
@@ -110,20 +182,54 @@ namespace BuildCaddySupervisor
                 return true;
 		}
 
+        bool IsConnectedEndpoint( IPEndPoint endPoint )
+        {
+            for ( int i = 0; i < m_remoteBuilders.Count; i++ )
+            {
+                if ( m_remoteBuilders[i].m_endPoint.Equals( endPoint ) )
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        int GetConnectedEndpointIndex( IPEndPoint endPoint )
+        {
+            for ( int i = 0; i < m_remoteBuilders.Count; i++ )
+            {
+                if ( m_remoteBuilders[i].m_endPoint.Equals( endPoint ) )
+                {
+                    return i;
+                }
+            }
+
+            return INVALID_INDEX;
+        }
+
 		void OnReceiveData( IMessage msg, IPEndPoint endPoint )
 		{
             string op = msg.GetOperation();
             //Console.WriteLine("OP: " + op + " from " + endPoint.ToString() );
 
+            if ( op.CompareTo( "PONG" ) == 0 )
+            {
+                string name = msg.GetValue( "name" );
+                Console.WriteLine( "Received PONG from: " + name );
+            }
+
             if ( op.CompareTo( "HLO" ) == 0 )
             {
+                string name = msg.GetValue( "name" );
+
                 Message outMessage = new Message();
-                outMessage.Add( "OP", "PNG" );
+                outMessage.Add( "OP", "SRV" );
 
                 bool found = false;
-                for ( int i = 0; i < m_endPoints.Count; i++ )
+                for ( int i = 0; i < m_remoteBuilders.Count; i++ )
                 {
-                    if ( m_endPoints[i].Equals( endPoint ) )
+                    if ( m_remoteBuilders[i].m_endPoint.Equals( endPoint ) )
                     {
                         found = true;
                         break;
@@ -132,30 +238,41 @@ namespace BuildCaddySupervisor
 
                 if ( !found )
                 {
-                    m_endPoints.Add( endPoint );
+                    m_remoteBuilders.Add( new RemoteBuilder( name, endPoint ) );
                 }
 
                 try
                 {
-                    Console.WriteLine("Sending PING to: " + endPoint );
+                    //Console.WriteLine("Sending PING to: " + endPoint );
                     m_networkService.Send( outMessage.GetSendable(), endPoint );
                 }
-                catch (System.Exception e)
+                catch ( System.Exception e )
                 {
                     Console.WriteLine( "Exception: " + e.ToString() );
                 }
             }
-
-                if ( op.CompareTo( "STATUS" ) == 0  )
+            else
             {
-                string message = msg.GetMessage();
-                Console.WriteLine( "STATUS: " + msg.GetMessage() );
-            }
+                int index = GetConnectedEndpointIndex( endPoint );
+                if ( index == INVALID_INDEX )
+                {
+                    return;
+                }
 
-            if ( op.CompareTo( "STEP" ) == 0 )
-            {
-                string message = msg.GetMessage();
-                Console.WriteLine( "BUILD STEP: " + message );
+                if ( m_verbose )
+                {
+                    if ( op.CompareTo( "STATUS" ) == 0  )
+                    {
+                        string message = msg.GetMessage();
+                        Console.WriteLine( m_remoteBuilders[index].m_name + ": " + "[STATUS] " + msg.GetMessage() );
+                    }
+
+                    if ( op.CompareTo( "STEP" ) == 0 )
+                    {
+                        string message = msg.GetMessage();
+                        Console.WriteLine(  m_remoteBuilders[index].m_name + ": " + "[BUILD STEP] " + message );
+                    }
+                }
             }
 		}
 	}
