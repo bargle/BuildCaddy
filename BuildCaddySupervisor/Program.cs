@@ -39,7 +39,7 @@ namespace BuildCaddySupervisor
 
 		public void Initialize()
 		{
-			m_networkService = new NetworkService();
+			m_networkService = new EncryptedNetworkService();
 			m_networkService.Initialize( 25000, OnReceiveData );
 
 			while ( true )

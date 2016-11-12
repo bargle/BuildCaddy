@@ -35,7 +35,7 @@ public class Plugin : IPlugin, IBuildMonitor
 
         m_builder.AddBuildMonitor(this);
 
-		m_networkService = new NetworkService();
+		m_networkService = new EncryptedNetworkService();
 		m_networkService.Initialize( 0, OnReceiveData );
 
 		ThreadStart threadStart = new ThreadStart( DoWork );

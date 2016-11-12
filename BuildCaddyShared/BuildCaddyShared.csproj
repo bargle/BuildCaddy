@@ -41,6 +41,8 @@
   <ItemGroup>
     <Compile Include="BuildStatus.cs" />
     <Compile Include="Config.cs" />
+    <Compile Include="EncryptedNetworkService.cs" />
+    <Compile Include="Encryption.cs" />
     <Compile Include="IBuilder.cs" />
     <Compile Include="IBuildMonitor.cs" />
     <Compile Include="ILog.cs" />

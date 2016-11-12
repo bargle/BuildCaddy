@@ -2,7 +2,7 @@
 {
     public class Message : IMessage
     {
-        private int m_version = 1;
+        private int m_version = 2;
         private string m_message = string.Empty;
         private string m_op = string.Empty;
         private bool m_valid = false;
@@ -29,7 +29,7 @@
         public Message()
         {
             m_jsonObject = new JSONObject();
-            m_jsonObject.AddField( "version", m_version );
+            m_jsonObject.AddField( "version", m_version.ToString() );
             m_valid = true;
         }
 
