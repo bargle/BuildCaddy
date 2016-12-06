@@ -119,6 +119,12 @@ public class Plugin : IPlugin
 
             string rev = GetAndUpdateRevisionNumber( m_repo );
             Console.WriteLine( "SVN - rev: " + rev );
+
+            if ( rev == string.Empty )
+            {
+                continue;
+            }
+
             if ( rev.CompareTo( current_rev ) != 0 )
             {
                 //Console.WriteLine("SVN: queue build command...");
