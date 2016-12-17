@@ -1,6 +1,7 @@
 ﻿using System.Net.Mail;
 using System.Net.Mime;
 using System.Collections.Generic;
+using System.IO;
 
 using BuildCaddyShared;
 
@@ -82,8 +83,11 @@ public class Plugin : IPlugin, IBuildMonitor
 
 			if ( logFilename != null && logFilename.Length > 0 )
 			{
-				Attachment data = new Attachment( logFilename );
-				mail.Attachments.Add( data );
+				if ( File.Exists ( logFilename ) )
+				{
+					Attachment data = new Attachment( logFilename );
+					mail.Attachments.Add( data );
+				}
 			}
 
 			SmtpServer.Port = 587;
