@@ -134,15 +134,21 @@ namespace BuildCaddy
 					                        m_buildStatusMonitor.SetRunning( "Starting " + m_taskName.Replace( ".task", "" ) + " build rev " + rev.ToString() + "..." );
 
 					                        m_log.WriteLine( "Building Revision " + rev + "..." );
+											Stopwatch _stopWatch = new Stopwatch();
+											_stopWatch.Start();
 					                        if ( KickoffBuild( m_taskName, rev.ToString() ) )
 					                        {
-						                        m_buildStatusMonitor.SetSuccess( "Finished " + m_taskName.Replace(".task", "") + " build rev " + rev.ToString() + "..." );
-                                                m_log.WriteLine( "Finished Revision " + rev + "..." );
+												_stopWatch.Stop();
+												string timeElapsedString = GetElapsedTimeString( _stopWatch.ElapsedMilliseconds );
+						                        m_buildStatusMonitor.SetSuccess( "Finished " + m_taskName.Replace(".task", "") + " build rev [" + rev.ToString() + "] in " + timeElapsedString );
+                                                m_log.WriteLine( "Finished Revision [" + rev + "] in " + timeElapsedString );
 					                        }
 					                        else
 					                        {
+												_stopWatch.Stop();
+												string timeElapsedString = GetElapsedTimeString( _stopWatch.ElapsedMilliseconds );
                                                 m_buildStatusMonitor.SetFailure(m_lastError, m_lastLog);
-                                                m_log.WriteLine( "Failed! Revision " + rev + "..." );
+                                                m_log.WriteLine( "Failed! Revision [" + rev + "] in " + timeElapsedString );
 					                        }
                                         }
                                     }
@@ -189,6 +195,34 @@ namespace BuildCaddy
 			return s_Config[ key ];
 		}
  
+		static string GetElapsedTimeString( long milliseconds )
+		{
+			const long s_Second = 1000;
+			const long s_Minute = s_Second * 60;
+			const long s_Hour	= s_Minute * 60;
+
+			long hours = milliseconds / s_Hour;
+
+			if ( hours > 0 )
+			{
+				milliseconds -= ( hours * s_Hour );
+			}
+
+			long minutes = milliseconds / s_Minute;
+
+			if ( minutes > 0 )
+			{
+				milliseconds -= ( minutes * s_Minute );
+			}
+
+			long seconds = milliseconds / s_Second;
+
+			return ( ( hours > 0 ) ? hours + " hours " : "" ) +
+				( ( minutes > 0 ) ? minutes + ( ( minutes > 1 ) ? " minutes" : " minute"  ) : "" ) +
+				(( seconds > 0 ) ? seconds + ( ( seconds > 1 ) ? " seconds" : " second"  ) : "" ) 
+				;
+		}
+
 		bool KickoffBuild( string taskName, string rev )
 		{
 			//Set Env vars: these will now be process-wide.
