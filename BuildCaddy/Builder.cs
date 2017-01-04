@@ -218,7 +218,7 @@ namespace BuildCaddy
 			long seconds = milliseconds / s_Second;
 
 			return ( ( hours > 0 ) ? hours + " hours " : "" ) +
-				( ( minutes > 0 ) ? minutes + ( ( minutes > 1 ) ? " minutes" : " minute"  ) : "" ) +
+				( ( minutes > 0 ) ? minutes + ( ( minutes > 1 ) ? " minutes " : " minute "  ) : "" ) +
 				(( seconds > 0 ) ? seconds + ( ( seconds > 1 ) ? " seconds" : " second"  ) : "" ) 
 				;
 		}
