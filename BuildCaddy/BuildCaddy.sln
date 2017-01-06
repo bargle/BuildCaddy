@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildCaddy", "BuildCaddy.csproj", "{25CB8175-256C-4D0F-969B-6169006177E6}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -31,6 +31,21 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailNotifierPlugin", "..\Ma
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SVNPlugin", "..\SVNPlugin\SVNPlugin.csproj", "{BF83938A-7879-4B42-9EC8-C3BD9CB80383}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DC4C0A84-751C-4D12-9FC8-5D0D600A32BA} = {DC4C0A84-751C-4D12-9FC8-5D0D600A32BA}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestSuite", "..\TestSuite\TestSuite.csproj", "{69D752F1-7EBE-42DD-95FA-59F28BF8154C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DC4C0A84-751C-4D12-9FC8-5D0D600A32BA} = {DC4C0A84-751C-4D12-9FC8-5D0D600A32BA}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimerPlugin", "..\TimerPlugin\TimerPlugin.csproj", "{C4DCF2E7-34F0-4F39-A5A3-0BBEC9AA2958}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DC4C0A84-751C-4D12-9FC8-5D0D600A32BA} = {DC4C0A84-751C-4D12-9FC8-5D0D600A32BA}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LiteNetPlugin", "..\LiteNetPlugin\LiteNetPlugin.csproj", "{736D43BA-7E39-4B0F-BF28-37062DEDF61B}"
 	ProjectSection(ProjectDependencies) = postProject
 		{DC4C0A84-751C-4D12-9FC8-5D0D600A32BA} = {DC4C0A84-751C-4D12-9FC8-5D0D600A32BA}
 	EndProjectSection
@@ -69,6 +84,18 @@ Global
 		{BF83938A-7879-4B42-9EC8-C3BD9CB80383}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BF83938A-7879-4B42-9EC8-C3BD9CB80383}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BF83938A-7879-4B42-9EC8-C3BD9CB80383}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69D752F1-7EBE-42DD-95FA-59F28BF8154C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69D752F1-7EBE-42DD-95FA-59F28BF8154C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69D752F1-7EBE-42DD-95FA-59F28BF8154C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69D752F1-7EBE-42DD-95FA-59F28BF8154C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C4DCF2E7-34F0-4F39-A5A3-0BBEC9AA2958}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4DCF2E7-34F0-4F39-A5A3-0BBEC9AA2958}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4DCF2E7-34F0-4F39-A5A3-0BBEC9AA2958}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4DCF2E7-34F0-4F39-A5A3-0BBEC9AA2958}.Release|Any CPU.Build.0 = Release|Any CPU
+		{736D43BA-7E39-4B0F-BF28-37062DEDF61B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{736D43BA-7E39-4B0F-BF28-37062DEDF61B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{736D43BA-7E39-4B0F-BF28-37062DEDF61B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{736D43BA-7E39-4B0F-BF28-37062DEDF61B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
