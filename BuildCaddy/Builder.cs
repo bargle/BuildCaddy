@@ -30,7 +30,8 @@ namespace BuildCaddy
 		Dictionary<string,string> s_Config = new Dictionary<string,string>();
 		BuildCaddyShared.Task s_Task = new BuildCaddyShared.Task();
 		BuildStatusMonitor m_buildStatusMonitor = new BuildStatusMonitor();
-        string m_taskName = string.Empty;
+		List< IBuildQueueMonitor > m_buildQueueMonitors = new List<IBuildQueueMonitor>();
+		string m_taskName = string.Empty;
         string m_taskFilename = string.Empty;
 
 		ILog m_log;
@@ -58,6 +59,14 @@ namespace BuildCaddy
             m_buildStatusMonitor.OnStep += monitor.OnStep;
         }
 
+		public void AddBuildQueueMonitor( IBuildQueueMonitor monitor )
+		{
+			if ( !m_buildQueueMonitors.Contains( monitor ) )
+			{
+				m_buildQueueMonitors.Add( monitor );
+			}
+		}
+
 		public ILog GetLog()
 		{
 			return m_log;
@@ -76,8 +85,36 @@ namespace BuildCaddy
         public void QueueCommand( string command, string[] args )
         {
             m_commands.Enqueue( new Command( command, args ) );
+			NotifyBuildQueueMonitors();
             m_commandEvent.Set();
         }
+
+		public string[] GetCurrentBuildQueue()
+		{
+			if ( m_commands.Count == 0 )
+			{
+				return null;
+			}
+
+			Command[] queue = m_commands.ToArray();
+
+			string[] commands = new string[ queue.Length ];
+
+			for( int i = 0; i < commands.Length; i++ )
+			{
+				if ( queue[i].m_args.Length > 0 )
+				{
+					commands[i] = queue[i].m_command + " " + queue[i].m_args[0];
+				}
+				else
+				{
+					commands[i] = queue[i].m_command;
+				}
+			}
+
+			return commands;
+		}
+
         #endregion
 
         public void Initialize( string[] args )
@@ -120,6 +157,8 @@ namespace BuildCaddy
                     Command command;
                     if ( m_commands.TryDequeue( out command ) )
                     {
+						NotifyBuildQueueMonitors();
+
                         //handle the command
                         switch( command.m_command )
                         {
@@ -221,6 +260,14 @@ namespace BuildCaddy
 				( ( minutes > 0 ) ? minutes + ( ( minutes > 1 ) ? " minutes, " : " minute, "  ) : "" ) +
 				(( seconds > 0 ) ? seconds + ( ( seconds > 1 ) ? " seconds" : " second"  ) : "" ) 
 				;
+		}
+
+		void NotifyBuildQueueMonitors()
+		{
+			for( int i = 0; i < m_buildQueueMonitors.Count; i++ )
+			{
+				m_buildQueueMonitors[ i ].OnQueueChanged();
+			}
 		}
 
 		bool KickoffBuild( string taskName, string rev )

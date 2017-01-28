@@ -50,6 +50,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LiteNetPlugin", "..\LiteNet
 		{DC4C0A84-751C-4D12-9FC8-5D0D600A32BA} = {DC4C0A84-751C-4D12-9FC8-5D0D600A32BA}
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebStatusPlugin", "..\WebStatusPlugin\WebStatusPlugin.csproj", "{05BFEF7F-B1EC-4446-A6CA-B3BCA511237B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DC4C0A84-751C-4D12-9FC8-5D0D600A32BA} = {DC4C0A84-751C-4D12-9FC8-5D0D600A32BA}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -96,6 +101,10 @@ Global
 		{736D43BA-7E39-4B0F-BF28-37062DEDF61B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{736D43BA-7E39-4B0F-BF28-37062DEDF61B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{736D43BA-7E39-4B0F-BF28-37062DEDF61B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{05BFEF7F-B1EC-4446-A6CA-B3BCA511237B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05BFEF7F-B1EC-4446-A6CA-B3BCA511237B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05BFEF7F-B1EC-4446-A6CA-B3BCA511237B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05BFEF7F-B1EC-4446-A6CA-B3BCA511237B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
