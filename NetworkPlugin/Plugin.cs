@@ -157,6 +157,15 @@ public class Plugin : IPlugin, IBuildMonitor
             }
         }
 
+        if ( op.CompareTo("DBLD") == 0 )
+        {
+            if ( m_server.Equals( endPoint ) )
+            {
+                string rev = msg.GetValue("rev");
+                m_builder.DequeueCommand( "build", new string[] { rev } );
+            }
+        }
+
         //...
         //Console.WriteLine( GetName() + "received a message from: " +endPoint.ToString() );
 		//Console.WriteLine( " MSG: " + msg.GetMessage() );

@@ -9,6 +9,7 @@
 		ILog GetLog();
         string GetConfigFilePath(string filename);
         void QueueCommand( string command, string[] args );
+        void DequeueCommand( string command, string[] args );
 		string[] GetCurrentBuildQueue();
 	}
 }

@@ -89,6 +89,42 @@ namespace BuildCaddy
             m_commandEvent.Set();
         }
 
+        public void DequeueCommand( string command, string[] args )
+        {
+			Command[] commands = m_commands.ToArray();
+			List<Command> command_list = new List<Command>( commands );
+			int index = -1;
+			for( int i = 0; i < command_list.Count; i++ )
+			{
+				if ( command_list[i].m_command.CompareTo( command ) != 0 )
+				{
+					continue;
+				}
+
+				if ( args == null || args.Length == 0 )
+				{
+					continue;
+				}
+
+				if ( command_list[i].m_args[0].CompareTo( args[0] ) != 0 )
+				{
+					continue;
+				}
+
+				index = i;
+				break;
+			}
+
+			if ( index != -1 )
+			{
+				command_list.RemoveAt( index );
+			}
+
+			m_commands = new ConcurrentQueue<Command>( command_list );
+			NotifyBuildQueueMonitors();
+            m_commandEvent.Set();
+        }
+
 		public string[] GetCurrentBuildQueue()
 		{
 			if ( m_commands.Count == 0 )

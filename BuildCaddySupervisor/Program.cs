@@ -40,7 +40,7 @@ namespace BuildCaddySupervisor
 		public void Initialize()
 		{
 			m_networkService = new EncryptedNetworkService();
-			m_networkService.Initialize( 25000, OnReceiveData );
+			m_networkService.Initialize( 27000, OnReceiveData );
 
 			while ( true )
 			{ 
@@ -107,6 +107,37 @@ namespace BuildCaddySupervisor
 						try
 						{
 							Console.WriteLine( "Sending BUILD command to: " + m_remoteBuilders[idx].m_endPoint.ToString() );
+							m_networkService.Send( newMsg.GetSendable(), m_remoteBuilders[idx].m_endPoint );
+						}
+						catch ( System.Exception e ) 
+						{
+							Console.WriteLine( "Exception: " + e.ToString() );
+						}
+                    }
+                    else
+                    {
+                        Console.WriteLine( "Couldn't parse:  " + tokens[1] );
+                    }
+                }
+
+				if ( msg.StartsWith( "dumpbuild" ) )
+				{
+                    string[] tokens = msg.Split( new char[]{ ' ' }, StringSplitOptions.RemoveEmptyEntries );
+                    if ( tokens.Length < 3 )
+					{
+                        Console.WriteLine( "Usage: dumpbuild <index> <rev number>" );
+						return true;
+                    }
+
+                    int idx = 0;
+					if ( int.TryParse(tokens[1], out idx ) )
+					{
+                        Message newMsg = new Message();
+                        newMsg.Add( "OP", "DBLD" );
+                        newMsg.Add( "rev", tokens[2] );
+						try
+						{
+							Console.WriteLine( "Sending DUMPBUILD command to: " + m_remoteBuilders[idx].m_endPoint.ToString() );
 							m_networkService.Send( newMsg.GetSendable(), m_remoteBuilders[idx].m_endPoint );
 						}
 						catch ( System.Exception e ) 

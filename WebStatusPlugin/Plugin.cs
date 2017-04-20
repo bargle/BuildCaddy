@@ -157,6 +157,7 @@ public class Plugin : IPlugin, IBuildMonitor, IBuildQueueMonitor, IStringProvide
 		if ( buildQueue == null )
 		{
 			m_buildQueue.Clear();
+			GenerateHTML();
 			return;
 		}
 
