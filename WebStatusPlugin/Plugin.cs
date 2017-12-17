@@ -190,7 +190,7 @@ public class Plugin : IPlugin, IBuildMonitor, IBuildQueueMonitor, IStringProvide
 
 		string builderName = m_builder.GetName();
 
-		m_html.AppendLine("<table border=1 width=800>");
+		m_html.AppendLine("<table border=1 width=98%>");
 			m_html.AppendLine("<tr>");
 				m_html.AppendLine("<td align=center colspan=3 bgcolor=#dddddd>");
 				m_html.AppendLine("<center><h1>"+ builderName +"<h1></center>");

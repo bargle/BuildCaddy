@@ -203,8 +203,8 @@ namespace BuildCaddy
                                     //first arg is rev number
                                     if ( command.m_args.Length > 0 )
                                     {
-                                        int rev = 0;
-                                        if ( int.TryParse( command.m_args[0], out rev ) ) //let's make sure this is actually a number...
+                                        string rev = command.m_args[0];
+                                        //if ( int.TryParse( command.m_args[0], out rev ) ) //let's make sure this is actually a number...
                                         {
 					                        m_buildStatusMonitor.SetRunning( "Starting " + m_taskName.Replace( ".task", "" ) + " build rev " + rev.ToString() + "..." );
 
@@ -345,6 +345,11 @@ namespace BuildCaddy
 					start.FileName = step.m_Command;
 					start.Arguments = step.m_Args;
 
+                    if ( step.m_WorkingFolder.Length > 0 )
+                    {
+                        start.WorkingDirectory = step.m_WorkingFolder;
+                    }
+
 					if ( step.m_Batch == false )
 					{
 						start.UseShellExecute = false;
@@ -387,6 +392,8 @@ namespace BuildCaddy
 					{ 
 						try 
 						{
+                            start.WindowStyle = ProcessWindowStyle.Minimized;
+
 							using ( Process process = Process.Start( start ) )
 							{
 								process.WaitForExit();

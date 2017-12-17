@@ -87,12 +87,13 @@ namespace BuildCaddyShared
     			            JSONObject entry = (JSONObject)obj.list[i];
 
                             Step step = new Step();
-                            step.m_Title        = JSONUtil.GetString( entry, "TITLE" );
-                            step.m_Command      = JSONUtil.GetString( entry, "COMMAND" );
-                            step.m_Args         = JSONUtil.GetString( entry, "ARGS" );
-                            step.m_Log          = JSONUtil.GetString( entry, "LOG" );
-                            step.m_Batch        = JSONUtil.GetString( entry, "BATCH" ).CompareTo("true") == 0;
-                            step.m_IgnoreErrors = JSONUtil.GetString( entry, "IGNOREERRORS" ).CompareTo("true") == 0;
+                            step.m_Title            = JSONUtil.GetString( entry, "TITLE" );
+                            step.m_Command          = JSONUtil.GetString( entry, "COMMAND" );
+                            step.m_Args             = JSONUtil.GetString( entry, "ARGS" );
+                            step.m_WorkingFolder    = JSONUtil.GetString( entry, "WORKINGFOLDER");
+                            step.m_Log              = JSONUtil.GetString( entry, "LOG" );
+                            step.m_Batch            = JSONUtil.GetString( entry, "BATCH" ).CompareTo("true") == 0;
+                            step.m_IgnoreErrors     = JSONUtil.GetString( entry, "IGNOREERRORS" ).CompareTo("true") == 0;
                             result.Add( step );
                         }
                     }

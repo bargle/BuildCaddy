@@ -1,5 +1,8 @@
-﻿using System.Net.Mail;
+﻿using System.Net;
+using System.Net.Security;
+using System.Net.Mail;
 using System.Net.Mime;
+using System.Security.Cryptography.X509Certificates;
 using System.Collections.Generic;
 using System.IO;
 
@@ -9,10 +12,13 @@ using BuildCaddyShared;
 public class Plugin : IPlugin, IBuildMonitor
 {
 	string m_server;
+    int m_serverPort;
 	string m_u;
 	string m_p;
 	string m_from;
 	string m_recipient;
+    string m_recipientFailure;
+    string m_recipientSuccess;
 	IBuilder m_builder;
     private Dictionary<string, string> m_Config = new Dictionary< string, string >();
 
@@ -35,11 +41,19 @@ public class Plugin : IPlugin, IBuildMonitor
 			return;
 		}
 
-		m_server		= GetConfigSetting( "smtp_server" );
-		m_u				= GetConfigSetting( "smtp_user" );
-		m_p				= GetConfigSetting( "smtp_pass" );
-		m_from			= GetConfigSetting( "smtp_sender" );
-		m_recipient		= GetConfigSetting( "smtp_recipient" );
+		m_server	    	= GetConfigSetting( "smtp_server" );
+		m_u			    	= GetConfigSetting( "smtp_user" );
+		m_p			    	= GetConfigSetting( "smtp_pass" );
+		m_from		    	= GetConfigSetting( "smtp_sender" );
+		m_recipient	    	= GetConfigSetting( "smtp_recipient" );
+        m_recipientSuccess  = GetConfigSetting( "smtp_success_recipient" );
+        m_recipientFailure  = GetConfigSetting( "smtp_success_recipient" );
+        string _serverPort  = GetConfigSetting( "smtp_server_port" );
+
+        if ( !int.TryParse( _serverPort, out m_serverPort ) )
+        {
+            m_serverPort = 587;
+        }
 
 		m_builder.AddBuildMonitor( this );
 	}
@@ -55,15 +69,28 @@ public class Plugin : IPlugin, IBuildMonitor
 #region IBuildMonitor Interface
 	public void OnRunning( string message ){}
     public void OnStep( string message ){}
-    public void OnSuccess( string message ){}
+    public void OnSuccess( string message )
+    {
+        if ( m_recipientSuccess.Length == 0 )
+        {
+            return;
+        }
+
+        SendMessage( m_recipientSuccess, "Build Ready", message );
+    }
 
 	public void OnFailure( string message, string logFilename )
 	{
-        SendMessage( message, logFilename );
+        if ( m_recipientFailure.Length == 0 )
+        {
+            return;
+        }
+
+        SendMessage( m_recipientFailure, "Build Alert!", message, logFilename );
 	}
 #endregion
 
-    void SendMessage( string message, string logFilename = "" )
+    void SendMessage( string recipient, string subject, string message, string logFilename = "" )
     {
 		   if ( !ValidateMetaData() )
 			{ 
@@ -74,11 +101,11 @@ public class Plugin : IPlugin, IBuildMonitor
 			MailMessage mail = new MailMessage();
 			SmtpClient SmtpServer = new SmtpClient( m_server );
 
-            m_builder.GetLog().WriteLine( "Sending mail to: " + m_recipient + " via " + m_server );
+            m_builder.GetLog().WriteLine( "Sending mail to: " + recipient + " via " + m_server );
 
 			mail.From = new MailAddress( m_from );
-			mail.To.Add( m_recipient );
-			mail.Subject = "Build Alert!";
+            mail.To.Add( recipient );
+            mail.Subject = subject;
 			mail.Body = message;
 
 			if ( logFilename != null && logFilename.Length > 0 )
@@ -90,11 +117,18 @@ public class Plugin : IPlugin, IBuildMonitor
 				}
 			}
 
-			SmtpServer.Port = 587;
+            SmtpServer.Port = m_serverPort;
+            SmtpServer.EnableSsl = true;
+            SmtpServer.UseDefaultCredentials = false;
 			SmtpServer.Credentials = new System.Net.NetworkCredential( m_u, m_p );
-			SmtpServer.EnableSsl = true;
 			SmtpServer.Timeout = 30000;
 			SmtpServer.DeliveryMethod = SmtpDeliveryMethod.Network;
+
+            System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) => true;
+
+            ServicePointManager.ServerCertificateValidationCallback =
+            delegate(object s, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+            { return true; };
 
 			try
 			{
