@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2047
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildCaddy", "BuildCaddy.csproj", "{25CB8175-256C-4D0F-969B-6169006177E6}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -60,6 +60,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoWorkerPlugin", "..\CoWork
 		{DC4C0A84-751C-4D12-9FC8-5D0D600A32BA} = {DC4C0A84-751C-4D12-9FC8-5D0D600A32BA}
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscordPlugin", "..\DiscordPlugin\DiscordPlugin.csproj", "{3CC45B3C-CC8F-4C58-BFAB-70D2A46101BD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -114,8 +116,15 @@ Global
 		{05C9070E-79BE-4D7D-AF1A-49D7E2E6B62A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{05C9070E-79BE-4D7D-AF1A-49D7E2E6B62A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{05C9070E-79BE-4D7D-AF1A-49D7E2E6B62A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3CC45B3C-CC8F-4C58-BFAB-70D2A46101BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3CC45B3C-CC8F-4C58-BFAB-70D2A46101BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3CC45B3C-CC8F-4C58-BFAB-70D2A46101BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3CC45B3C-CC8F-4C58-BFAB-70D2A46101BD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2A2E4F34-7237-459D-9A1C-C2C78C94C464}
 	EndGlobalSection
 EndGlobal

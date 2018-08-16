@@ -338,6 +338,8 @@ namespace BuildCaddy
 				{ 
 					m_log.WriteLine( "Starting step: " + step.m_Title );
 
+					m_log.WriteLine( step.m_Command + " "  + step.m_Args );
+
                     //Inform the build monitor that we are starting this step
                     m_buildStatusMonitor.SetStep( step.m_Title );
 

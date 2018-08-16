@@ -27,7 +27,7 @@ public class Plugin : IPlugin
         string cfg_filename = m_builder.GetConfigFilePath("git.cfg");
         if (!Config.ReadJSONConfig(cfg_filename, ref m_Config))
         {
-            m_builder.GetLog().WriteLine("Error loading svn.cfg! " + GetName() + " disabled...");
+            m_builder.GetLog().WriteLine("Error loading git.cfg! " + GetName() + " disabled...");
             return;
         }
 
