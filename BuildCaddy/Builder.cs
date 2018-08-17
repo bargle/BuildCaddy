@@ -24,6 +24,18 @@ namespace BuildCaddy
             public string[] m_args;
         }
 
+		struct BuildArguments
+		{
+			public BuildArguments( string _rev, string _buildId )
+			{
+				m_revision = _rev;
+				m_buildId = _buildId;
+			}
+
+			public string m_revision;
+			public string m_buildId;
+		}
+
         ConcurrentQueue< Command > m_commands = new ConcurrentQueue<Command>();
         AutoResetEvent m_commandEvent = new AutoResetEvent(false);
 
@@ -204,6 +216,12 @@ namespace BuildCaddy
                                     if ( command.m_args.Length > 0 )
                                     {
                                         string rev = command.m_args[0];
+
+										string buildId = string.Empty;
+										if( command.m_args.Length > 1 )
+										{
+											buildId = command.m_args[1];
+										}
                                         //if ( int.TryParse( command.m_args[0], out rev ) ) //let's make sure this is actually a number...
                                         {
 					                        m_buildStatusMonitor.SetRunning( "Starting " + m_taskName.Replace( ".task", "" ) + " build rev " + rev.ToString() + "..." );
@@ -211,7 +229,7 @@ namespace BuildCaddy
 					                        m_log.WriteLine( "Building Revision " + rev + "..." );
 											Stopwatch _stopWatch = new Stopwatch();
 											_stopWatch.Start();
-					                        if ( KickoffBuild( m_taskName, rev.ToString() ) )
+					                        if ( KickoffBuild( m_taskName, new BuildArguments( rev.ToString(), buildId ) ) )
 					                        {
 												_stopWatch.Stop();
 												string timeElapsedString = GetElapsedTimeString( _stopWatch.ElapsedMilliseconds );
@@ -306,8 +324,11 @@ namespace BuildCaddy
 			}
 		}
 
-		bool KickoffBuild( string taskName, string rev )
+		bool KickoffBuild( string taskName, BuildArguments args )
 		{
+			string rev = args.m_revision;
+			string buildId = args.m_buildId;
+
 			//Set Env vars: these will now be process-wide.
 			foreach ( var pair in s_Config ) //TODO: this needs to honor the ENV tag
 			{ 
@@ -317,6 +338,11 @@ namespace BuildCaddy
 			//Build Just-in-time build session variables. (Such as revision number)
 			Dictionary< string, string > dict = new Dictionary<string,string>();
 			dict.Add( "REVISION", rev );
+
+			if ( buildId.Length > 0  )
+			{
+				dict.Add( "BUILD_ID", buildId );
+			}
  
 			for ( int i = 0; i < s_Task.Steps.Count; i++ )
 			{

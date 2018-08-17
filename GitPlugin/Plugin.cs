@@ -75,7 +75,7 @@ public class Plugin : IPlugin
     {
         if (!m_Config.ContainsKey(key))
         {
-            return string.Empty;
+            return m_builder.GetConfigString(key);
         }
 
         return m_Config[key];
@@ -113,13 +113,47 @@ public class Plugin : IPlugin
         return string.Empty;
     }
 
-    void DoWork()
+	string GetAndUpdateBuildNumber(string url, string branch)
+	{
+		ProcessStartInfo start = new ProcessStartInfo();
+		//start.WorkingDirectory = url;
+		start.FileName = GetConfigSetting("GIT_BINARY");
+		start.Arguments = "describe " +  GetConfigSetting("REMOTE_BRANCH");
+		start.UseShellExecute = false;
+		start.RedirectStandardOutput = true;
+		start.WorkingDirectory = GetConfigSetting("PROJECT_PATH");
+
+		using (Process process = Process.Start(start))
+		{
+			using (StreamReader reader = process.StandardOutput)
+			{
+				string result = reader.ReadToEnd();
+				string[] tokens = result.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+				foreach (string token in tokens)
+				{
+
+					string[] buildTokens = token.Split(new char[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
+					if (buildTokens.Length > 1)
+					{
+						return buildTokens[0].Replace("v","") + "." + buildTokens[1];
+					}
+				}
+			}
+		}
+
+		return string.Empty;
+	}
+
+	void DoWork()
     {
         Console.WriteLine("GIT: initial check...");
         string current_rev = GetAndUpdateRevisionNumber(m_repo, m_branch);
         Console.WriteLine("GIT: current rev: " + current_rev);
 
-        while (true)
+		string current_build = GetAndUpdateBuildNumber(m_repo, m_branch);
+		Console.WriteLine("GIT - current build: " + current_build);
+
+		while (true)
         {
             if (m_bDone)
             {
@@ -132,18 +166,22 @@ public class Plugin : IPlugin
             string rev = GetAndUpdateRevisionNumber(m_repo, m_branch);
             Console.WriteLine("GIT - rev: " + rev);
 
-            if (rev == string.Empty)
+			string build = GetAndUpdateBuildNumber(m_repo, m_branch);
+			Console.WriteLine("GIT - build: " + build);
+
+			if (rev == string.Empty)
             {
                 continue;
             }
 
-            if (rev.CompareTo(current_rev) != 0)
+            if (rev.CompareTo(current_rev) != 0 || build.CompareTo(current_build) != 0 )
             {
                 Console.WriteLine( "New commit: " + rev );
 
-                m_builder.QueueCommand( "build", new string[] { rev } );
+                m_builder.QueueCommand( "build", new string[] { rev, build } );
 
                 current_rev = rev;
+				current_build = build;
             }
 
         }
