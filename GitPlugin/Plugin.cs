@@ -18,6 +18,7 @@ public class Plugin : IPlugin
     private int m_delay = 10000;
     private string m_repo;
     private string m_branch = "master";
+	private bool m_useTags = false;
 
     #region IPlugin Interface
     public void Initialize(IBuilder builder)
@@ -47,7 +48,13 @@ public class Plugin : IPlugin
             m_branch = branch;
         }
 
-        string _delay = GetConfigSetting("delay");
+		string tagsEnabled = GetConfigSetting("usetags");
+		if (tagsEnabled.ToLower().CompareTo("true") == 0)
+		{
+			m_useTags = true;
+		}
+
+			string _delay = GetConfigSetting("delay");
         if (int.TryParse(_delay, out m_delay))
         {
             ThreadStart threadStart = new ThreadStart(DoWork);
@@ -113,8 +120,29 @@ public class Plugin : IPlugin
         return string.Empty;
     }
 
+	void FetchTags()
+	{
+		ProcessStartInfo start = new ProcessStartInfo();
+		start.FileName = GetConfigSetting("GIT_BINARY");
+		start.Arguments = "fetch --tags";
+		start.UseShellExecute = false;
+		start.WorkingDirectory = GetConfigSetting("PROJECT_PATH");
+
+		using (Process process = Process.Start(start))
+		{
+			//
+		}
+	}
+
 	string GetAndUpdateBuildNumber(string url, string branch)
 	{
+		if ( !m_useTags )
+		{
+			return string.Empty;
+		}
+
+		FetchTags();
+
 		ProcessStartInfo start = new ProcessStartInfo();
 		//start.WorkingDirectory = url;
 		start.FileName = GetConfigSetting("GIT_BINARY");
@@ -151,7 +179,11 @@ public class Plugin : IPlugin
         Console.WriteLine("GIT: current rev: " + current_rev);
 
 		string current_build = GetAndUpdateBuildNumber(m_repo, m_branch);
-		Console.WriteLine("GIT - current build: " + current_build);
+
+		if ( m_useTags )
+		{
+			Console.WriteLine("GIT - current build: " + current_build);
+		}
 
 		while (true)
         {
@@ -167,7 +199,11 @@ public class Plugin : IPlugin
             Console.WriteLine("GIT - rev: " + rev);
 
 			string build = GetAndUpdateBuildNumber(m_repo, m_branch);
-			Console.WriteLine("GIT - build: " + build);
+
+			if ( m_useTags )
+			{
+				Console.WriteLine("GIT - build: " + build);
+			}
 
 			if (rev == string.Empty)
             {
@@ -178,7 +214,14 @@ public class Plugin : IPlugin
             {
                 Console.WriteLine( "New commit: " + rev );
 
-                m_builder.QueueCommand( "build", new string[] { rev, build } );
+				if (m_useTags)
+				{
+					m_builder.QueueCommand("build", new string[] { rev, build });
+				}
+				else
+				{
+					m_builder.QueueCommand("build", new string[] { rev });
+				}
 
                 current_rev = rev;
 				current_build = build;
