@@ -224,7 +224,14 @@ namespace BuildCaddy
 										}
                                         //if ( int.TryParse( command.m_args[0], out rev ) ) //let's make sure this is actually a number...
                                         {
-					                        m_buildStatusMonitor.SetRunning( "Starting " + m_taskName.Replace( ".task", "" ) + " build rev " + rev.ToString() + "..." );
+											if ( buildId.Length > 0 )
+											{
+												m_buildStatusMonitor.SetRunning( "Starting " + m_taskName.Replace(".task", "") + " build " + buildId + ", rev " + rev.ToString() + "..." );
+											}
+											else
+											{
+												m_buildStatusMonitor.SetRunning( "Starting " + m_taskName.Replace(".task", "") + " build rev " + rev.ToString() + "..." );
+											}
 
 					                        m_log.WriteLine( "Building Revision " + rev + "..." );
 											Stopwatch _stopWatch = new Stopwatch();

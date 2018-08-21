@@ -130,7 +130,10 @@ public class Plugin : IPlugin
 
 		using (Process process = Process.Start(start))
 		{
-			//
+			while ( !process.HasExited )
+			{
+				Thread.Sleep( 250 );
+			}
 		}
 	}
 
