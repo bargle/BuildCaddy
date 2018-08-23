@@ -162,11 +162,18 @@ public class Plugin : IPlugin
 				string[] tokens = result.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 				foreach (string token in tokens)
 				{
-
-					string[] buildTokens = token.Split(new char[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
-					if (buildTokens.Length > 1)
+					if (token.Contains("-"))
 					{
-						return buildTokens[0].Replace("v","") + "." + buildTokens[1];
+
+						string[] buildTokens = token.Split(new char[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
+						if (buildTokens.Length > 1)
+						{
+							return buildTokens[0].Replace("v", "") + "." + buildTokens[1];
+						}
+					}
+					else
+					{
+						return token.Replace( "v", "" );
 					}
 				}
 			}
@@ -213,7 +220,7 @@ public class Plugin : IPlugin
                 continue;
             }
 
-            if (rev.CompareTo(current_rev) != 0 || build.CompareTo(current_build) != 0 )
+            if ( rev.CompareTo(current_rev) != 0 )
             {
                 Console.WriteLine( "New commit: " + rev );
 
@@ -227,7 +234,6 @@ public class Plugin : IPlugin
 				}
 
                 current_rev = rev;
-				current_build = build;
             }
 
         }
