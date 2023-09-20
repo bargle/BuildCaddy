@@ -189,6 +189,13 @@ public abstract class HttpServer {
 	public void Stop()
 	{
 		is_active = false;
+		try
+		{
+			if (listener != null)
+			{
+				listener.Stop();
+			}
+		}catch( Exception ) { }
 	}
 	
 	public void listen() {

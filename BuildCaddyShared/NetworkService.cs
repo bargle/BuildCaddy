@@ -47,6 +47,16 @@ namespace BuildCaddyShared
 		    }
 	    }
 
+    public void Shutdown()
+    {
+      try
+      {
+        m_Peer.Client.Close();
+        m_Peer.Close();
+      }
+      catch ( Exception ) { }
+    }
+
 	    protected virtual string Decode( byte[] bytes )
 	    {
 		    return ASCIIEncoding.ASCII.GetString( bytes );
